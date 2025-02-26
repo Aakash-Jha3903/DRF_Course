@@ -1,22 +1,30 @@
 from rest_framework import serializers
 from .models import Person, Color
 
-class ColorSerializer(serializers.Serializer):
+
+class UserLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True)
+    
+
+class ColorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Color
-        field = ["color_name","id"]
+        fields = "__all__"
     
 
 class PersonSerializer(serializers.ModelSerializer):
     pcolor = ColorSerializer()
-    country = serializers.SerializerMethodField()
+    color_info = serializers.SerializerMethodField()
     class Meta:
         model = Person
         fields = "__all__"
-        # depth = 1
+        depth = 1
         
-    def get_country(self,obj):
-        return "Bharat"
+    def get_color_info(self,obj):   # get_  prefix 
+        color_obj = Color.objects.get(id=obj.pcolor.id)
+        # return "Bharat"
+        return {"color_name":color_obj.color_name,"hex":"#000"}
 
     def validate(self, data):
         speacial_character = "!@#$%^&*()+=;<=>?-/\''._`|~"
@@ -24,6 +32,5 @@ class PersonSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Person name should not contain any special characters")
         
         if data['age'] < 0:
-            raise serializers.ValidationError(
-                "Age should be greater than zero")
+            raise serializers.ValidationError("Age should be greater than zero")
         return data

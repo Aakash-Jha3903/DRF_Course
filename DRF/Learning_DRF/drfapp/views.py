@@ -1,11 +1,13 @@
 # Create your views here : myapp/views.py 
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from rest_framework.views import APIView
+
 
 from . models import Person
-from .serializers import PersonSerializer
+from .serializers import PersonSerializer, UserLoginSerializer
 
 @api_view(["GET","POST","DELETE",])
 def index(request):
@@ -28,10 +30,37 @@ def index(request):
     # return HttpResponse(request, "<h1> yo </h1>")
     
     
+@api_view(["POST"])
+def user_login(request):
+    serializer = UserLoginSerializer(data = request.data)
+    if serializer.is_valid():
+        data = serializer.data
+        return Response({"message":f"success and the data is : {data}"})
+    return Response(serializer.errors)
+
+class PersonAPI(APIView):
+    def get(self,request):
+        return Response({"message":"This is a get-method"})
+    
+    def post(self,request):
+        return Response({"message":"This is a post-method"})
+    
+    def put(self,request):
+        return Response({"message":"This is a put-method"})
+    
+    def patch(self,request):
+        return Response({"message":"This is a patch-method"})
+    
+    def delete(self,request):
+        return Response({"message":"This is a delete-method"})
+    
+    
 @api_view(['GET',"POST","PUT","PATCH","DELETE"])
 def person(request):
     if request.method == "GET":
-        objs = Person.objects.all()
+        # objs = Person.objects.all()
+        objs = Person.objects.filter(pcolor__isnull=False)
+        
         # print("objs : ",objs)
         serializer = PersonSerializer(objs, many=True) # if more than one object 
         # print(f"serializer : {serializer}")
