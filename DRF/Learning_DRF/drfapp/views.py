@@ -131,6 +131,19 @@ def person(request):
     
     
     
+#1:20:00
+from rest_framework import viewsets
+class PeopleViewSet(viewsets.ModelViewSet):
+    serializer_class = PersonSerializer
+    queryset = Person.objects.all()
+    
+    def list(self, request): 
+        search = request.GET.get("search")
+        if search:
+            queryset = self.queryset.filter(name__startswith=search)
+        serializers = PersonSerializer(queryset,many=True)
+        return Response({"status":200,"data":serializers.data})    
+    
     
     
     

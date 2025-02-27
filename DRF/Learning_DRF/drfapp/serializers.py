@@ -15,16 +15,26 @@ class ColorSerializer(serializers.ModelSerializer):
 
 class PersonSerializer(serializers.ModelSerializer):
     pcolor = ColorSerializer()
+    # pcolor = ColorSerializer(read_only=True)
     color_info = serializers.SerializerMethodField()
     class Meta:
         model = Person
         fields = "__all__"
-        depth = 1
-        
-    def get_color_info(self,obj):   # get_  prefix 
-        color_obj = Color.objects.get(id=obj.pcolor.id)
-        # return "Bharat"
-        return {"color_name":color_obj.color_name,"hex":"#000"}
+        # depth = 1
+
+    def create(self, validated_data):  # Overridding the create() method, @GPT
+        pcolor_data = validated_data.pop("pcolor", None)
+        if pcolor_data: 
+            color_instance, _ = Color.objects.get_or_create(**pcolor_data)
+        else:
+            color_instance = None
+        person = Person.objects.create(pcolor=color_instance, **validated_data)
+        return person
+
+    def get_color_info(self,obj):   # get_  prefix
+        if obj.pcolor:
+            return {"id": obj.pcolor.id, "color_name": obj.pcolor.color_name}
+        return None
 
     def validate(self, data):
         speacial_character = "!@#$%^&*()+=;<=>?-/\''._`|~"
