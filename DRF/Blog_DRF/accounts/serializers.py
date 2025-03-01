@@ -1,4 +1,3 @@
-import django.contrib.auth
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -17,7 +16,9 @@ class RegisterSerializer(serializers.Serializer):
     def create(self, validated_values):
         user = User.objects.create_user(username=validated_values["username"].lower())
         user.set_password(validated_values["password"])
-        return validated_values
+        user.save()  # Save the user instance with the hashed password
+        # return validated_values
+        return user
 
 
 class LoginSerializer(serializers.Serializer):
@@ -33,10 +34,11 @@ class LoginSerializer(serializers.Serializer):
         user = authenticate(username=data["username"], password=data["password"])
         # print(user)
         if not user:    
-            return {"message": "Invalid Credentials", }
+            return {"message": "Invalid Credentials" }
         refresh = RefreshToken.for_user(user)
         return {
             "message": "Login successfully",
+            "uuid":user.id ,
             "data": {
                 "token": {
                     "refresh": str(refresh),
