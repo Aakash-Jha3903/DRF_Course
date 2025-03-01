@@ -152,19 +152,46 @@ class PeopleViewSet(viewsets.ModelViewSet):
     def list(self, request): 
         search = request.GET.get("search")
         queryset = Person.objects.all()
+        
+        http_method_name = ["GET", "POST"]  # now ModelViewSet allows to these http methods only    
+        
         # usr = UserLoginSerializer.objects.all()
         if search:
             queryset = self.queryset.filter(name__startswith=search)
             serializers = PersonSerializer(queryset,many=True)
             # return Response({"status":200,"data":serializers.data})    
             return Response({"status":200,"data":serializers.data},status=status.HTTP_200_OK)    
-        return Response({"status":200,"data":serializers.data},status=status.HTTP_200_OK)    
+        return Response({"message":"Search data is not passed in request"})    
         # if usr:
         #     usr_serializers = UserLoginSerializer(usr,many=True)
         #     return Response({"status":200,"data":usr_serializers.data},status=status.HTTP_200_OK)    
 
+
+    # 2:00:52 - Actions in Django rest framework  ----------------------------------------------------------------------------------
+    from rest_framework.decorators import action
+    '''     (1) This "Action-Viewset" is a class based-"method"
+            (2) decorator is used, with specific HTTP methods
+            (3) to call this method, we dont need to specify any specific url in the urls.py !!
+            (4) we can call this method via this url : api/people/97-59-29/send_mail_to_person/
+            (5) set "details=True", when we recieve something like "pid or slug" from the user
+    '''
+    @action(detail=True, methods=["POST"])
+    def send_mail_to_person_withSlug(self, request, pk=None):
+        person_obj = Person.objects.get(pk=pk)
+        if not person_obj:
+            return Response({"status":False, "message": f"With-slug method ; Person with id {pk} not found"},status=status.HTTP_404_NOT_FOUND)
+        serializer = PersonSerializer(person_obj) 
+        return Response({'status': True, 'message': f"WITH-SLUG={pk} and serializer.data =>> {serializer.data}"})
+
     
-# 1:31:08 - Token Authentication in DRF ----------------------------------------------------------------------------------
+    @action(detail=False, methods=["POST"])
+    def send_mail_to_person(self, request):
+        return Response({'status': True, 'message': f"Email sent successfully, With-OUT slug"})
+
+
+
+    
+# 1:31:08 - Token Authentication in DRF -----------------------------------------------------------------------------------------------
 from django.contrib.auth.models import User
 
 class RegisterAPI(APIView):
@@ -207,6 +234,10 @@ class CustomPagination(APIView):
             serializers = PersonSerializer(paginator.page(page),many=True)
             return Response({"status":True,"data":serializers.data},status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"status":False,"message":f"Ivvalid page or Error : {str(e)}"},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"status":False,"message":f"Invalid page or Error : {str(e)}"},status=status.HTTP_400_BAD_REQUEST)
 
+
+
+
+    
         

@@ -23,6 +23,7 @@ urlpatterns = [
     path("login/", views.LoginAPI.as_view()),
     
     path("paginator/", views.CustomPagination.as_view()),
+    # path("EmailViewSet/", views.EmailViewSet.as_view()),
     
 
 ]
