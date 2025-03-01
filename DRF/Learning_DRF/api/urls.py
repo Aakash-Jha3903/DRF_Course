@@ -18,5 +18,11 @@ urlpatterns = [
     path("PersonAPI/", views.PersonAPI.as_view()),   #views.CLassName.as_view() "<= OR =>" import the className directly then CLassName.as_view() will be the syntax !!
 
     path("",include(router.urls)),
+    
+    path("register/", views.RegisterAPI.as_view()),
+    path("login/", views.LoginAPI.as_view()),
+    
+    path("paginator/", views.CustomPagination.as_view()),
+    
 
 ]

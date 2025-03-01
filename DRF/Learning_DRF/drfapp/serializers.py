@@ -44,3 +44,31 @@ class PersonSerializer(serializers.ModelSerializer):
         if data['age'] < 0:
             raise serializers.ValidationError("Age should be greater than zero")
         return data
+
+
+
+# 1:31:08 - Token Authentication in DRF ---------------------------------------------
+from django.contrib.auth.models import User
+class RegiterSerizlizer(serializers.Serializer):
+    username = serializers.CharField(max_length=50)
+    email = serializers.EmailField()
+    password = serializers.CharField(max_length=50)
+
+    def create(self,validated_data):
+        user = User.objects.create_user(username=validated_data["username"],email=validated_data["email"])
+        user.set_password(validated_data["password"])
+        user.save()
+        # print(user)  #Aakash Jha7 <= username
+        # print(validated_data) #{'username': 'Aakash Jha7', 'email': 'aj7@gmail.com', 'password': '1234'}
+
+        return user # return validated_data,  DONO HI KAM KAR RAHE HAI !!
+
+
+    def validate(self, data):
+        if data["username"]:
+            if User.objects.filter(username=data["username"]).exists(): 
+                raise serializers.ValidationError("User already exists, with this username !")
+        if data["email"]:
+            if User.objects.filter(email=data["email"]).exists(): 
+                raise serializers.ValidationError("User already exists, with this Email !")
+        return data

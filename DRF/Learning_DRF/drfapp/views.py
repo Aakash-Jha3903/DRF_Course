@@ -7,9 +7,9 @@ from rest_framework.views import APIView
 
 
 from . models import Person
-from .serializers import PersonSerializer, UserLoginSerializer
+from .serializers import PersonSerializer, UserLoginSerializer, RegiterSerizlizer
 
-@api_view(["GET","POST","DELETE",])
+@api_view(["GET","POST",])
 def index(request):
     courses = {
         "course_name": "Python ",
@@ -18,28 +18,39 @@ def index(request):
     if request.method == "GET":
         data = request.GET.get('search')
         print(data)
-        print("You hit a get method")
+        print("You hit a GET method")
         return Response(courses)        
-    elif request.method == "POST":
+    if request.method == "POST":
         data = request.data
         print(data)
         print("You hit a POST method")
         return Response()        
         
     return Response()
-    # return HttpResponse(request, "<h1> yo </h1>")
-    
+
     
 @api_view(["POST"])
 def user_login(request):
-    serializer = UserLoginSerializer(data = request.data)
+    serializer = UserLoginSerializer(data = request.data)  # "data=" likhna jaruri hai, so that we can use the identifier.data i.e.,  serializer.data 
+    print(f"before login, .is_valid() **********************:\n {serializer}")
+    # print(f"before login, serializer.data.email  **********************:\n {serializer.data.get("email") }")
+    print(f"before login, serializer..is_valid()  **********************:\n {serializer.is_valid()}")
+
     if serializer.is_valid():
-        data = serializer.data
+        data = serializer.data  # dict. mai convert ho gaya ==> {'email': 'aj7@gmail.com', 'password': '1234'}
+        print(f"before login, serializer.data  **********************:\n {serializer.data}")
         return Response({"message":f"success and the data is : {data}"})
     return Response(serializer.errors)
 
+# 1:50:45 - Permissions(login-user or Anonymous-user) in DRF ------------------------------------------------------------------------------------------
+from rest_framework.authentication import TokenAuthentication, BaseAuthentication  #SessionAuthentication  #1:50:45 - Permissions(login or not) in DRF 
+from rest_framework.permissions import IsAuthenticated  #1:50:45 - Permissions(login or not) in DRF 
+
 class PersonAPI(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication]
     def get(self,request):
+        print(request.user)   # tells, which user is logined
         return Response({"message":"This is a get-method"})
     
     def post(self,request):
@@ -131,20 +142,71 @@ def person(request):
     
     
     
-#1:20:00
+#1:20:00 => ModelViewSet and status in DRF 
 from rest_framework import viewsets
+from rest_framework import status
 class PeopleViewSet(viewsets.ModelViewSet):
     serializer_class = PersonSerializer
     queryset = Person.objects.all()
     
     def list(self, request): 
         search = request.GET.get("search")
+        queryset = Person.objects.all()
+        # usr = UserLoginSerializer.objects.all()
         if search:
             queryset = self.queryset.filter(name__startswith=search)
-        serializers = PersonSerializer(queryset,many=True)
-        return Response({"status":200,"data":serializers.data})    
+            serializers = PersonSerializer(queryset,many=True)
+            # return Response({"status":200,"data":serializers.data})    
+            return Response({"status":200,"data":serializers.data},status=status.HTTP_200_OK)    
+        return Response({"status":200,"data":serializers.data},status=status.HTTP_200_OK)    
+        # if usr:
+        #     usr_serializers = UserLoginSerializer(usr,many=True)
+        #     return Response({"status":200,"data":usr_serializers.data},status=status.HTTP_200_OK)    
+
     
+# 1:31:08 - Token Authentication in DRF ----------------------------------------------------------------------------------
+from django.contrib.auth.models import User
+
+class RegisterAPI(APIView):
+    def post(self,request):
+        data = request.data 
+        serializer = RegiterSerizlizer(data=data)
+        if not serializer.is_valid():
+            return Response({"status":False, "message": serializer.errors},status= status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response({"status": True, "message": f"User [{data["username"]}] Registered successfully"},status= status.HTTP_201_CREATED)
+
+
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
+class LoginAPI(APIView):
+    def post(self, request):
+        data = request.data
+        serializers = UserLoginSerializer(data=data)
+        if not serializers.is_valid():
+            return Response({"status":False, "message": serializers.errors},status=status.HTTP_400_BAD_REQUEST)
+        usr = authenticate(username=data["username"], password=data["password"])
+        
+        token,_ = Token.objects.get_or_create(user=usr)
+        return Response({"message":"Login Successfully","token":str(token)},status=status.HTTP_201_CREATED)
+
+
     
-    
-    
-    
+# 1:55:27 - Pagination in DRF  --------------------------------------------------------------------------------------------------------------------------------
+from django.core.paginator import Paginator 
+
+class CustomPagination(APIView):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    def get(self,request):
+        objs = Person.objects.all()
+        page = request.GET.get("page",1)
+        page_size = 3   # per_page mai 3 data(dict.) hoga bass
+        try :    
+            paginator = Paginator(objs, page_size)
+            serializers = PersonSerializer(paginator.page(page),many=True)
+            return Response({"status":True,"data":serializers.data},status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"status":False,"message":f"Ivvalid page or Error : {str(e)}"},status=status.HTTP_400_BAD_REQUEST)
+
+        
