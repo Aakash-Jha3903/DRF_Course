@@ -22,7 +22,8 @@ class PublicBlogView(APIView):
                 return Response({"message":"No blogs found"}, status=status.HTTP_404_NOT_FOUND)
 
             page_number = request.GET.get('page',1)
-            paginator = Paginator(blogs,5)  #http://127.0.0.1:8000/api/home/all_blogs/?page=4
+            page_size = 2
+            paginator = Paginator(blogs,page_size)  #http://127.0.0.1:8000/api/home/all_blogs/?page=4
 
 
 

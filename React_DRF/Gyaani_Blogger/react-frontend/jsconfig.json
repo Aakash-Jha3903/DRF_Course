@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+    "jsx": "react-jsx",
+
+    "allowSyntheticDefaultImports": true,
+
+
+    "allowJs": true,
+    "moduleResolution": "node",
+      // ...
+      "baseUrl": ".",
+      "paths": {
+        "@/*": [
+          "./src/*"
+        ]
+      }
+      // ...
+    }
+  }
+  
